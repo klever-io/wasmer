@@ -15,14 +15,14 @@ wasmer-types = { path = "../types", version = "=2.2.1" }
 region = "3.0"
 libc = { version = "^0.2", default-features = false }
 memoffset = "0.6"
-indexmap = { version = "1.6", features = ["serde-1"] }
+indexmap = { version = "2.2", features = ["serde"] }
 thiserror = "1.0"
 more-asserts = "0.2"
 cfg-if = "1.0"
 backtrace = "0.3"
 serde = { version = "1.0", features = ["derive", "rc"] }
-rkyv = { version = "0.7.20", optional = true }
-loupe = { version = "0.1", features = ["enable-indexmap"] }
+rkyv = { git = "https://github.com/klever-io/rkyv.git", version = "0.7.45", optional = true }
+loupe = { git = "https://github.com/klever-io/loupe", features = ["enable-indexmap"] }
 enum-iterator = "0.7.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]

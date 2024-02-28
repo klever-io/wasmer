@@ -13,9 +13,9 @@ edition = "2018"
 [dependencies]
 serde = { version = "1.0", features = ["derive", "rc"], optional = true, default-features = false }
 thiserror = "1.0"
-indexmap = { version = "1.6", features = ["serde-1"] }
-rkyv = { version = "0.7.20", optional = true }
-loupe = { version = "0.1", features = ["enable-indexmap"] }
+indexmap = { version = "2.2", features = ["serde"] }
+rkyv = { git = "https://github.com/klever-io/rkyv.git", version = "0.7.45", optional = true }
+loupe = { git = "https://github.com/klever-io/loupe", features = ["enable-indexmap"] }
 
 [features]
 default = ["std", "enable-serde", "enable-rkyv"]

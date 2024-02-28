@@ -24,7 +24,7 @@ rayon = "1.5"
 more-asserts = "0.2"
 gimli = { version = "0.25", optional = true }
 smallvec = "1.6"
-loupe = "0.1"
+loupe = { git = "https://github.com/klever-io/loupe" }
 target-lexicon = { version = "0.12.2", default-features = false }
 
 [dev-dependencies]

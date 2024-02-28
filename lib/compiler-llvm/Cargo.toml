@@ -19,12 +19,12 @@ wasmer-vm = { path = "../vm", version = "=2.2.1" }
 wasmer-types = { path = "../types", version = "=2.2.1" }
 target-lexicon = { version = "0.12.2", default-features = false }
 smallvec = "1.6"
-object = { version = "0.28.3", default-features = false, features = ["read"] }
+object = { version = "0.32", default-features = false, features = ["read"] }
 libc = { version = "^0.2", default-features = false }
 byteorder = "1"
 itertools = "0.10"
 rayon = "1.5"
-loupe = "0.1"
+loupe = { git = "https://github.com/klever-io/loupe" }
 
 [dependencies.inkwell]
 package = "inkwell"

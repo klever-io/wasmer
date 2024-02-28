@@ -23,11 +23,11 @@ leb128 = "0.2"
 libloading = "0.7"
 tempfile = "3.1"
 which = "4.0"
-rkyv = "0.7.20"
-loupe = "0.1"
+rkyv = { git = "https://github.com/klever-io/rkyv.git", version = "0.7.45" }
+loupe = { git = "https://github.com/klever-io/loupe" }
 enumset = "1.0"
 enum-iterator = "0.7.0"
-object = { version = "0.28.3", default-features = false, features = ["write"] }
+object = { version = "0.32", default-features = false, features = ["write"] }
 
 [features]
 # Enable the `compiler` feature if you want the engine to compile
