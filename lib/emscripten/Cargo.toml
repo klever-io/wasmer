@@ -1,6 +1,6 @@
 [package]
 name = "wasmer-emscripten"
-version = "2.2.1"
+version = "2.2.2"
 description = "Emscripten implementation library for Wasmer WebAssembly runtime"
 categories = ["wasm", "os"]
 keywords = ["wasm", "webassembly", "abi", "emscripten", "posix"]

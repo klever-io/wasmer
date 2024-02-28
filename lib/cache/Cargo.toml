@@ -1,6 +1,6 @@
 [package]
 name = "wasmer-cache"
-version = "2.2.1"
+version = "2.2.2"
 description = "Cache system for Wasmer WebAssembly runtime"
 categories = ["wasm", "caching"]
 keywords = ["wasm", "webassembly", "cache"]

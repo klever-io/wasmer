@@ -1,6 +1,6 @@
 [package]
 name = "wasmer-vm"
-version = "2.2.1"
+version = "2.2.2"
 description = "Runtime library support for Wasmer"
 categories = ["wasm"]
 keywords = ["wasm", "webassembly"]

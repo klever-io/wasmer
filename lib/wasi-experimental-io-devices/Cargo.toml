@@ -1,6 +1,6 @@
 [package]
 name = "wasmer-wasi-experimental-io-devices"
-version = "2.2.1"
+version = "2.2.2"
 description = "An experimental non-standard WASI extension for graphics"
 categories = ["wasm"]
 keywords = ["wasm", "webassembly", "types"]

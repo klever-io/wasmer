@@ -1,6 +1,6 @@
 [package]
 name = "wasmer-engine-universal"
-version = "2.2.1"
+version = "2.2.2"
 description = "Wasmer Universal Engine"
 categories = ["wasm"]
 keywords = ["wasm", "webassembly", "engine", "universal"]

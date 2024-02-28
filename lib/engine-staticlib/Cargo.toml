@@ -1,6 +1,6 @@
 [package]
 name = "wasmer-engine-staticlib"
-version = "2.2.1"
+version = "2.2.2"
 authors = ["Wasmer Engineering Team <engineering@wasmer.io>"]
 description = "Wasmer Staticlib Engine"
 categories = ["wasm"]
