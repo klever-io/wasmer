@@ -1,6 +1,6 @@
 [package]
 name = "wasmer-compiler-cranelift"
-version = "2.2.2"
+version.workspace = true
 description = "Cranelift compiler for Wasmer WebAssembly runtime"
 categories = ["wasm"]
 keywords = ["wasm", "webassembly", "compiler", "cranelift"]

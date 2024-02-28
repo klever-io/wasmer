@@ -1,6 +1,6 @@
 [package]
 name = "wasmer-cli"
-version = "2.2.2"
+version.workspace = true
 description = "Wasmer CLI"
 categories = ["wasm", "command-line-interface"]
 keywords = ["wasm", "webassembly", "cli"]

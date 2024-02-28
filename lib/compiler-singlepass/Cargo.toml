@@ -1,6 +1,6 @@
 [package]
 name = "wasmer-compiler-singlepass"
-version = "2.2.2"
+version.workspace = true
 description = "Singlepass compiler for Wasmer WebAssembly runtime"
 categories = ["wasm"]
 keywords = ["wasm", "webassembly", "compiler", "singlepass"]

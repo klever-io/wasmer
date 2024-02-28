@@ -1,6 +1,6 @@
 [package]
 name = "wasmer-compiler"
-version = "2.2.2"
+version.workspace = true
 description = "Base compiler abstraction for Wasmer WebAssembly runtime"
 categories = ["wasm", "no-std"]
 keywords = ["wasm", "webassembly", "compiler"]

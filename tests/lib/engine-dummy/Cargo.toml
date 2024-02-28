@@ -1,6 +1,6 @@
 [package]
 name = "wasmer-engine-dummy"
-version = "2.2.2"
+version.workspace = true
 authors = ["Wasmer Engineering Team <engineering@wasmer.io>"]
 description = "Wasmer placeholder engine"
 license = "MIT"

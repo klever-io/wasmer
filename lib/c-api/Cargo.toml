@@ -1,6 +1,6 @@
 [package]
 name = "wasmer-c-api"
-version = "2.2.2"
+version.workspace = true
 description = "Wasmer C API library"
 categories = ["wasm", "api-bindings"]
 keywords = ["wasm", "webassembly", "runtime"]

@@ -1,6 +1,6 @@
 [package]
 name = "wasmer-engine-dylib"
-version = "2.2.2"
+version.workspace = true
 description = "Wasmer Dylib Engine"
 categories = ["wasm"]
 keywords = ["wasm", "webassembly", "engine", "dylib"]

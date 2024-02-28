@@ -1,6 +1,6 @@
 [package]
 name = "wasmer-object"
-version = "2.2.2"
+version.workspace = true
 description = "Wasmer Native Object generator"
 categories = ["wasm"]
 keywords = ["wasm", "webassembly"]
