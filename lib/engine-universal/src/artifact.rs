@@ -1,6 +1,7 @@
 //! Define `UniversalArtifact` to allow compiling and instantiating to be
 //! done as separate steps.
 
+use std::fmt::format;
 use crate::engine::{UniversalEngine, UniversalEngineInner};
 use crate::link::link_module;
 #[cfg(feature = "compiler")]
@@ -29,6 +30,12 @@ use wasmer_vm::{
     FuncDataRegistry, FunctionBodyPtr, MemoryStyle, TableStyle, VMSharedSignatureIndex,
     VMTrampoline,
 };
+
+const MAX_FUNCTIONS: usize = 10000;
+
+const MAX_FUNCTION_PARAMS: usize = 50;
+
+const MAX_FUNCTION_RESULTS: usize = 5;
 
 /// A compiled wasm module, ready to be instantiated.
 #[derive(MemoryUsage)]
@@ -64,6 +71,8 @@ impl UniversalArtifact {
         let features = inner_engine.features();
 
         let translation = environ.translate(data).map_err(CompileError::Wasm)?;
+
+        Self::validate_functions(&translation.module)?;
 
         let compiler = inner_engine.compiler()?;
 
@@ -148,6 +157,22 @@ impl UniversalArtifact {
         Err(CompileError::Codegen(
             "Compilation is not enabled in the engine".to_string(),
         ))
+    }
+
+    fn validate_functions(info: &ModuleInfo) -> Result<(), CompileError> {
+        let max_params = info.signatures.values().map(|s| s.params().len()).max().unwrap();
+        let max_results = info.signatures.values().map(|s| s.results().len()).max().unwrap();
+
+        if info.functions.len() >= MAX_FUNCTIONS {
+            return Err(CompileError::Validate(format!("Max allowed functions is {}", MAX_FUNCTIONS)));
+        }
+        if max_params > MAX_FUNCTION_PARAMS {
+            return Err(CompileError::Validate(format!("Max allowed function params is {}", MAX_FUNCTION_PARAMS)));
+        }
+        if max_results > MAX_FUNCTION_RESULTS {
+            return Err(CompileError::Validate(format!("Max allowed function results is {}", MAX_FUNCTION_RESULTS)));
+        }
+        return Ok(())
     }
 
     /// Deserialize a UniversalArtifact
