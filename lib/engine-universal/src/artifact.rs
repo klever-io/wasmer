@@ -160,6 +160,10 @@ impl UniversalArtifact {
     }
 
     fn validate_functions(info: &ModuleInfo) -> Result<(), CompileError> {
+        if info.signatures.values().len() == 0 {
+            // empty contract is allowed
+            return Ok(())
+        }
         let max_params = info.signatures.values().map(|s| s.params().len()).max().unwrap();
         let max_results = info.signatures.values().map(|s| s.results().len()).max().unwrap();
 

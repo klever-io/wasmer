@@ -958,39 +958,39 @@ impl InstanceHandle {
         };
         let instance = handle.instance().as_ref();
 
-        ptr::copy(
+        safe_ptr_copy(
             vmshared_signatures.values().as_slice().as_ptr(),
             instance.signature_ids_ptr() as *mut VMSharedSignatureIndex,
             vmshared_signatures.len(),
-        );
-        ptr::copy(
+        ).map_err(|_| Trap::lib(TrapCode::InvalidPointerCopy))?;
+        safe_ptr_copy(
             imports.functions.values().as_slice().as_ptr(),
             instance.imported_functions_ptr() as *mut VMFunctionImport,
             imports.functions.len(),
-        );
-        ptr::copy(
+        ).map_err(|_| Trap::lib(TrapCode::InvalidPointerCopy))?;
+        safe_ptr_copy(
             imports.tables.values().as_slice().as_ptr(),
             instance.imported_tables_ptr() as *mut VMTableImport,
             imports.tables.len(),
-        );
-        ptr::copy(
+        ).map_err(|_| Trap::lib(TrapCode::InvalidPointerCopy))?;
+        safe_ptr_copy(
             imports.memories.values().as_slice().as_ptr(),
             instance.imported_memories_ptr() as *mut VMMemoryImport,
             imports.memories.len(),
-        );
-        ptr::copy(
+        ).map_err(|_| Trap::lib(TrapCode::InvalidPointerCopy))?;
+        safe_ptr_copy(
             imports.globals.values().as_slice().as_ptr(),
             instance.imported_globals_ptr() as *mut VMGlobalImport,
             imports.globals.len(),
-        );
+        ).map_err(|_| Trap::lib(TrapCode::InvalidPointerCopy))?;
         // these should already be set, add asserts here? for:
         // - instance.tables_ptr() as *mut VMTableDefinition
         // - instance.memories_ptr() as *mut VMMemoryDefinition
-        ptr::copy(
+        safe_ptr_copy(
             vmctx_globals.values().as_slice().as_ptr(),
             instance.globals_ptr() as *mut NonNull<VMGlobalDefinition>,
             vmctx_globals.len(),
-        );
+        ).map_err(|_| Trap::lib(TrapCode::InvalidPointerCopy))?;
         ptr::write(
             instance.builtin_functions_ptr() as *mut VMBuiltinFunctionsArray,
             VMBuiltinFunctionsArray::initialized(),
@@ -1263,6 +1263,46 @@ impl InstanceHandle {
         Ok(())
     }
 }
+
+/// Safely copies data between two pointers after performing alignment and overlap checks
+/// Returns Result<(), &'static str> to indicate success or specific failure reasons
+pub unsafe fn safe_ptr_copy<T>(
+    src: *const T,
+    dst: *mut T,
+    count: usize,
+) -> Result<(), &'static str> {
+    // Check for null pointers
+    if src.is_null() {
+        return Err("Source pointer is null");
+    }
+    if dst.is_null() {
+        return Err("Destination pointer is null");
+    }
+
+    // Check alignment
+    let alignment = std::mem::align_of::<T>();
+    if (src as usize) % alignment != 0 {
+        return Err("Source pointer is not properly aligned");
+    }
+    if (dst as usize) % alignment != 0 {
+        return Err("Destination pointer is not properly aligned");
+    }
+
+    // Check for overlap
+    let src_start = src as usize;
+    let src_end = src_start + count * std::mem::size_of::<T>();
+    let dst_start = dst as usize;
+    let dst_end = dst_start + count * std::mem::size_of::<T>();
+
+    if (src_start <= dst_end) && (dst_start <= src_end) {
+        return Err("Source and destination memory ranges overlap");
+    }
+
+    // If all checks pass, perform the copy
+    ptr::copy_nonoverlapping(src, dst, count);
+    Ok(())
+}
+
 
 /// Compute the offset for a memory data initializer.
 fn get_memory_init_start(init: &DataInitializer<'_>, instance: &Instance) -> usize {

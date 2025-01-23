@@ -63,6 +63,9 @@ pub enum TrapCode {
 
     /// An atomic memory access was attempted with an unaligned pointer.
     UnalignedAtomic = 11,
+
+    /// A copy operation was attempted with an unaligned pointer.
+    InvalidPointerCopy = 12,
 }
 
 impl TrapCode {
@@ -81,6 +84,7 @@ impl TrapCode {
             Self::BadConversionToInteger => "invalid conversion to integer",
             Self::UnreachableCodeReached => "unreachable",
             Self::UnalignedAtomic => "unaligned atomic access",
+            Self::InvalidPointerCopy => "invalid pointer copy",
         }
     }
 }
@@ -100,6 +104,7 @@ impl Display for TrapCode {
             Self::BadConversionToInteger => "bad_toint",
             Self::UnreachableCodeReached => "unreachable",
             Self::UnalignedAtomic => "unalign_atom",
+            Self::InvalidPointerCopy => "invalid_ptr_copy",
         };
         f.write_str(identifier)
     }
@@ -122,6 +127,7 @@ impl FromStr for TrapCode {
             "bad_toint" => Ok(TrapCode::BadConversionToInteger),
             "unreachable" => Ok(TrapCode::UnreachableCodeReached),
             "unalign_atom" => Ok(TrapCode::UnalignedAtomic),
+            "invalid_ptr_copy" => Ok(TrapCode::InvalidPointerCopy),
             _ => Err(()),
         }
     }
@@ -132,7 +138,7 @@ mod tests {
     use super::*;
 
     // Everything but user-defined codes.
-    const CODES: [TrapCode; 12] = [
+    const CODES: [TrapCode; 13] = [
         TrapCode::StackOverflow,
         TrapCode::HeapAccessOutOfBounds,
         TrapCode::HeapMisaligned,
@@ -145,6 +151,7 @@ mod tests {
         TrapCode::BadConversionToInteger,
         TrapCode::UnreachableCodeReached,
         TrapCode::UnalignedAtomic,
+        TrapCode::InvalidPointerCopy,
     ];
 
     #[test]

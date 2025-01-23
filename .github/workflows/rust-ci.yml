@@ -1,0 +1,31 @@
+name: Builds and tests
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+
+jobs:
+  rust_test:
+    name: Rust tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup toolchain
+        run: rustup default 1.81
+      - name: Run rust tests
+        run: cargo test
+  clippy_check:
+    permissions: write-all
+    name: Clippy linter check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup toolchain
+        run: |
+          rustup default 1.81
+          rustup component add clippy
+      - name: Run clippy
+        run: cargo clippy --all-features
