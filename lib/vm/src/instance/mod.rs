@@ -12,7 +12,7 @@ mod r#ref;
 mod reset;
 
 pub use allocator::InstanceAllocator;
-pub use r#ref::{InstanceRef, WeakInstanceRef, WeakOrStrongInstanceRef};
+pub use r#ref::{InstanceRef, WeakOrStrongInstanceRef};
 
 use crate::export::VMExtern;
 use crate::func_data_registry::VMFuncRef;
@@ -39,6 +39,7 @@ use std::convert::{TryFrom, TryInto};
 use std::ffi;
 use std::fmt;
 use std::mem;
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::ptr::{self, NonNull};
 use std::slice;
 use std::sync::Arc;
@@ -1279,28 +1280,23 @@ pub unsafe fn safe_ptr_copy<T>(
         return Err("Destination pointer is null");
     }
 
-    // Check alignment
-    let alignment = std::mem::align_of::<T>();
-    if (src as usize) % alignment != 0 {
-        return Err("Source pointer is not properly aligned");
-    }
-    if (dst as usize) % alignment != 0 {
-        return Err("Destination pointer is not properly aligned");
+    if count == 0 {
+        return Ok(());
     }
 
-    // Check for overlap
-    let src_start = src as usize;
-    let src_end = src_start + count * std::mem::size_of::<T>();
-    let dst_start = dst as usize;
-    let dst_end = dst_start + count * std::mem::size_of::<T>();
-
-    if (src_start <= dst_end) && (dst_start <= src_end) {
-        return Err("Source and destination memory ranges overlap");
+    match catch_unwind(AssertUnwindSafe(|| {
+        ptr::copy(src, dst, count);
+    })) {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            if let Some(err) = e.downcast_ref::<&'static str>() {
+                return Err(*err);
+                
+            }
+            
+            Err("Unknown panic during ptr::copy")
+        }
     }
-
-    // If all checks pass, perform the copy
-    ptr::copy_nonoverlapping(src, dst, count);
-    Ok(())
 }
 
 
