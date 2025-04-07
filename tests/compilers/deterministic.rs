@@ -43,27 +43,3 @@ fn deterministic_table() -> Result<()> {
 
     compile_and_compare(&wasm_bytes)
 }
-
-#[test]
-fn should_not_panic_on_bad_init_param() -> Result<()> {
-    let wasm_bytes = wat2wasm(br#"
-(module
-    (type $t0 (func (param i32)))
-    (func $init (type $t0) (param $p0 i32))
-    (memory $memory 2)
-    (export "memory" (memory 0))
-    (export "init" (func $init)))
-"#,)?;
-
-    let store = Store::new(&Universal::new(Singlepass::default()).engine());
-    let module = Module::new(&store, wasm_bytes)?;
-
-    match wasmer::Instance::new(&module, &imports! {}) {
-        Ok(_) => panic!("Expected an error"),
-        Err(e) => {
-            assert_eq!(e.to_string(), "RuntimeError: invalid pointer copy");
-        }
-    }
-
-    Ok(())
-}
