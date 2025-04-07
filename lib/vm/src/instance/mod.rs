@@ -39,7 +39,6 @@ use std::convert::{TryFrom, TryInto};
 use std::ffi;
 use std::fmt;
 use std::mem;
-use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::ptr::{self, NonNull};
 use std::slice;
 use std::sync::Arc;
@@ -1265,38 +1264,57 @@ impl InstanceHandle {
     }
 }
 
+#[inline(always)]
+fn is_aligned<T>(ptr: *const T) -> bool {
+    (ptr as usize) % std::mem::align_of::<T>() == 0
+}
+
 /// Safely copies data between two pointers after performing alignment and overlap checks
-/// Returns Result<(), &'static str> to indicate success or specific failure reasons
 pub unsafe fn safe_ptr_copy<T>(
     src: *const T,
     dst: *mut T,
     count: usize,
 ) -> Result<(), &'static str> {
-    // Check for null pointers
-    if src.is_null() {
-        return Err("Source pointer is null");
-    }
-    if dst.is_null() {
-        return Err("Destination pointer is null");
+    if src.is_null() || dst.is_null() {
+        return Err("Source or destination pointer is null");
     }
 
-    if count == 0 {
+    if count == 0 || std::mem::size_of::<T>() == 0 {
+        return Ok(()); // Zero-sized types or zero count: no-op
+    }
+
+    // Check for overlapping memory regions
+    let src_start = src as usize;
+    let src_end = src_start + (count * std::mem::size_of::<T>());
+    let dst_start = dst as usize;
+    let dst_end = dst_start + (count * std::mem::size_of::<T>());
+
+    let overlap = (src_start < dst_end) && (dst_start < src_end);
+
+    // If both pointers are aligned, use the optimized copy
+    if is_aligned(src) && is_aligned(dst) {
+        if overlap {
+            // Handle overlapping regions with memmove semantics
+            std::ptr::copy(src, dst, count);
+        } else {
+            // Non-overlapping can use the faster copy_nonoverlapping
+            std::ptr::copy_nonoverlapping(src, dst, count);
+        }
         return Ok(());
     }
 
-    match catch_unwind(AssertUnwindSafe(|| {
-        ptr::copy(src, dst, count);
-    })) {
-        Ok(_) => Ok(()),
-        Err(e) => {
-            if let Some(err) = e.downcast_ref::<&'static str>() {
-                return Err(*err);
-                
-            }
-            
-            Err("Unknown panic during ptr::copy")
-        }
+    // For unaligned pointers, perform a byte-wise copy
+    let src_bytes = src as *const u8;
+    let dst_bytes = dst as *mut u8;
+    let total_bytes = std::mem::size_of::<T>() * count;
+
+    if overlap {
+        std::ptr::copy(src_bytes, dst_bytes, total_bytes);
+    } else {
+        std::ptr::copy_nonoverlapping(src_bytes, dst_bytes, total_bytes);
     }
+
+    Ok(())
 }
 
 
