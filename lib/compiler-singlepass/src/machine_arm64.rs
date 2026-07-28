@@ -2581,6 +2581,9 @@ impl Machine for MachineARM64 {
             temps.push(tmp.clone());
             Location::GPR(tmp)
         };
+        // Count set bits with Kernighan's algorithm: each iteration clears the
+        // lowest set bit (src &= src - 1) and increments the counter, so the
+        // loop runs exactly popcnt(src) times and always terminates.
         let label_loop = self.assembler.get_label();
         let label_exit = self.assembler.get_label();
         self.assembler
@@ -2588,11 +2591,10 @@ impl Machine for MachineARM64 {
         self.assembler.emit_cbz_label(Size::S32, src, label_exit); // src==0, exit
         self.assembler.emit_label(label_loop); // loop:
         self.assembler
-            .emit_add(Size::S32, dest, Location::Imm8(1), dest); // inc dest
-        self.assembler.emit_clz(Size::S32, src, tmp); // clz src => tmp
+            .emit_add(Size::S32, dest, Location::Imm8(1), dest); // dest += 1
         self.assembler
-            .emit_add(Size::S32, tmp, Location::Imm8(1), tmp); // inc tmp
-        self.assembler.emit_lsl(Size::S32, src, tmp, src); // src << tmp => src
+            .emit_sub(Size::S32, src, Location::Imm8(1), tmp); // tmp = src - 1
+        self.assembler.emit_and(Size::S32, src, tmp, src); // src &= tmp (clear lowest set bit)
         self.assembler.emit_cbnz_label(Size::S32, src, label_loop); // if src!=0 goto loop
         self.assembler.emit_label(label_exit);
         if ret != dest {
@@ -3534,6 +3536,9 @@ impl Machine for MachineARM64 {
             temps.push(tmp.clone());
             Location::GPR(tmp)
         };
+        // Count set bits with Kernighan's algorithm: each iteration clears the
+        // lowest set bit (src &= src - 1) and increments the counter, so the
+        // loop runs exactly popcnt(src) times and always terminates.
         let label_loop = self.assembler.get_label();
         let label_exit = self.assembler.get_label();
         self.assembler
@@ -3541,11 +3546,10 @@ impl Machine for MachineARM64 {
         self.assembler.emit_cbz_label(Size::S64, src, label_exit);
         self.assembler.emit_label(label_loop);
         self.assembler
-            .emit_add(Size::S32, dest, Location::Imm8(1), dest);
-        self.assembler.emit_clz(Size::S64, src, tmp);
+            .emit_add(Size::S32, dest, Location::Imm8(1), dest); // dest += 1
         self.assembler
-            .emit_add(Size::S32, tmp, Location::Imm8(1), tmp);
-        self.assembler.emit_lsl(Size::S64, src, tmp, src);
+            .emit_sub(Size::S64, src, Location::Imm8(1), tmp); // tmp = src - 1
+        self.assembler.emit_and(Size::S64, src, tmp, src); // src &= tmp (clear lowest set bit)
         self.assembler.emit_cbnz_label(Size::S64, src, label_loop);
         self.assembler.emit_label(label_exit);
         if ret != dest {
