@@ -3317,6 +3317,7 @@ dependencies = [
  "more-asserts",
  "region",
  "rkyv",
+ "rustversion",
  "serde",
  "thiserror",
  "wasmer-types",
