@@ -16,7 +16,7 @@ jobs:
       - name: Setup toolchain
         run: rustup default 1.81
       - name: Run rust tests
-        run: cargo test
+        run: cargo test --features singlepass
   clippy_check:
     permissions: write-all
     name: Clippy linter check
