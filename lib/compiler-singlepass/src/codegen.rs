@@ -306,6 +306,9 @@ impl<'a, M: Machine> FuncGen<'a, M> {
     /// Releases locations used for stack value.
     fn release_locations(&mut self, locs: &[Location<M::GPR, M::SIMD>]) {
         let mut delta_stack_offset: usize = 0;
+        // `acquire_locations` grows the stack by one rounded slot per spilled value,
+        // so release the same amount per value rather than rounding the total.
+        let slot_size = self.machine.round_stack_adjust(8);
 
         for loc in locs.iter().rev() {
             match *loc {
@@ -329,7 +332,7 @@ impl<'a, M: Machine> FuncGen<'a, M> {
                             unreachable!();
                         }
                         self.stack_offset.0 -= 8;
-                        delta_stack_offset += 8;
+                        delta_stack_offset += slot_size;
                         self.state.stack_values.pop().unwrap();
                     }
                 }
@@ -345,6 +348,9 @@ impl<'a, M: Machine> FuncGen<'a, M> {
     /// Releases locations used for stack value.
     fn release_locations_value(&mut self, stack_depth: usize) {
         let mut delta_stack_offset: usize = 0;
+        // `acquire_locations` grows the stack by one rounded slot per spilled value,
+        // so release the same amount per value rather than rounding the total.
+        let slot_size = self.machine.round_stack_adjust(8);
         let locs: &[Location<M::GPR, M::SIMD>] = &self.value_stack[stack_depth..];
 
         for loc in locs.iter().rev() {
@@ -369,7 +375,7 @@ impl<'a, M: Machine> FuncGen<'a, M> {
                             unreachable!();
                         }
                         self.stack_offset.0 -= 8;
-                        delta_stack_offset += 8;
+                        delta_stack_offset += slot_size;
                         self.state.stack_values.pop().unwrap();
                     }
                 }
@@ -405,6 +411,9 @@ impl<'a, M: Machine> FuncGen<'a, M> {
 
     fn release_locations_only_stack(&mut self, locs: &[Location<M::GPR, M::SIMD>]) {
         let mut delta_stack_offset: usize = 0;
+        // `acquire_locations` grows the stack by one rounded slot per spilled value,
+        // so release the same amount per value rather than rounding the total.
+        let slot_size = self.machine.round_stack_adjust(8);
 
         for loc in locs.iter().rev() {
             if let Location::Memory(y, x) = *loc {
@@ -417,7 +426,7 @@ impl<'a, M: Machine> FuncGen<'a, M> {
                         unreachable!();
                     }
                     self.stack_offset.0 -= 8;
-                    delta_stack_offset += 8;
+                    delta_stack_offset += slot_size;
                     self.state.stack_values.pop().unwrap();
                 }
             }
@@ -442,6 +451,9 @@ impl<'a, M: Machine> FuncGen<'a, M> {
 
     fn release_locations_keep_state(&mut self, stack_depth: usize) {
         let mut delta_stack_offset: usize = 0;
+        // `acquire_locations` grows the stack by one rounded slot per spilled value,
+        // so release the same amount per value rather than rounding the total.
+        let slot_size = self.machine.round_stack_adjust(8);
         let mut stack_offset = self.stack_offset.0;
         let locs = &self.value_stack[stack_depth..];
 
@@ -456,7 +468,7 @@ impl<'a, M: Machine> FuncGen<'a, M> {
                         unreachable!();
                     }
                     stack_offset -= 8;
-                    delta_stack_offset += 8;
+                    delta_stack_offset += slot_size;
                 }
             }
         }

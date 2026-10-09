@@ -369,3 +369,126 @@ fn large_number_local(mut config: crate::Config) -> Result<()> {
     assert_eq!(&Value::I64(1 as i64), result.get(0).unwrap());
     Ok(())
 }
+
+/// Leak of native stack when several spilled values are released at once
+///
+/// On arm64 the singlepass compiler rounds every single-value spill up to 16
+/// bytes, but released several spilled values with one rounding of their
+/// total size (e.g. two spills grew the stack by 32 bytes and shrank it by
+/// 16). Passing spilled arguments to a call leaked stack space on every
+/// iteration of the loop below until the call stack was exhausted.
+///
+/// Note: this one is specific to Singlepass on arm64, but we want to test in
+/// all available compilers.
+#[compiler_test(issues)]
+fn singlepass_call_spilled_params_stack_leak(mut config: crate::Config) -> Result<()> {
+    let store = config.store();
+    let wat = r#"
+      (module
+        (func $sink (param i64 i64))
+        (func (export "run") (param $n i32) (result i64)
+          (local $i i32) (local $x i64)
+          i64.const 7
+          local.set $x
+          (loop $l
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            call $sink
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            local.get $i
+            i32.const 1
+            i32.add
+            local.tee $i
+            local.get $n
+            i32.lt_u
+            br_if $l)
+          local.get $x))
+    "#;
+    let module = Module::new(&store, wat)?;
+    let instance = Instance::new(&module, &imports! {})?;
+    let run = instance.exports.get_function("run")?;
+    let result = run.call(&[Value::I32(1_000_000)])?;
+    assert_eq!(result.to_vec(), vec![Value::I64(7)]);
+    Ok(())
+}
+
+/// Leak of native stack when a branch releases several spilled values
+///
+/// Same rounding mismatch as `singlepass_call_spilled_params_stack_leak`, on
+/// the path taken by `br_if`: the spilled values above the target frame were
+/// released with one rounding of their total size, so every taken branch
+/// leaked stack space on arm64.
+///
+/// Note: this one is specific to Singlepass on arm64, but we want to test in
+/// all available compilers.
+#[compiler_test(issues)]
+fn singlepass_br_if_spilled_values_stack_leak(mut config: crate::Config) -> Result<()> {
+    let store = config.store();
+    let wat = r#"
+      (module
+        (func $touch)
+        (func (export "run") (param $n i32) (result i64)
+          (local $i i32) (local $x i64)
+          i64.const 7
+          local.set $x
+          (loop $l
+            call $touch
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $i
+            i32.const 1
+            i32.add
+            local.tee $i
+            local.get $n
+            i32.lt_u
+            br_if $l
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop)
+          local.get $x))
+    "#;
+    let module = Module::new(&store, wat)?;
+    let instance = Instance::new(&module, &imports! {})?;
+    let run = instance.exports.get_function("run")?;
+    let result = run.call(&[Value::I32(1_000_000)])?;
+    assert_eq!(result.to_vec(), vec![Value::I64(7)]);
+    Ok(())
+}
