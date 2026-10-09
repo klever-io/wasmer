@@ -493,3 +493,75 @@ fn singlepass_br_if_spilled_values_stack_leak(mut config: crate::Config) -> Resu
     assert_eq!(result.to_vec(), vec![Value::I64(7)]);
     Ok(())
 }
+
+/// Leak of native stack in the `else` of an `if` whose result is spilled
+///
+/// When every allocatable GPR is taken by outer values, the result of the
+/// `then` arm is spilled to the stack. On `Operator::Else` the singlepass
+/// compiler released that slot with `adjust_stack` (which grows the stack)
+/// instead of `restore_stack`, so every pass through the `then` arm leaked
+/// stack space. Locals are addressed from the frame pointer, so the leak only
+/// shows once something writes below the stack pointer: the `call` in the
+/// loop below walks into the guard page and exhausts the call stack.
+///
+/// Note: this one is specific to Singlepass, but we want to test in all
+/// available compilers.
+#[compiler_test(issues)]
+fn singlepass_else_stack_leak(mut config: crate::Config) -> Result<()> {
+    let store = config.store();
+    let wat = r#"
+      (module
+        (func $touch)
+        (func (export "run") (param $n i32) (result i64)
+          (local $i i32) (local $x i64)
+          i64.const 7
+          local.set $x
+          (loop $l
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $x
+            local.get $i
+            i32.const 1
+            i32.or
+            (if (result i64)
+              (then local.get $x)
+              (else local.get $x))
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            drop
+            call $touch
+            local.get $i
+            i32.const 1
+            i32.add
+            local.tee $i
+            local.get $n
+            i32.lt_u
+            br_if $l)
+          local.get $x))
+    "#;
+    let module = Module::new(&store, wat)?;
+    let instance = Instance::new(&module, &imports! {})?;
+    let run = instance.exports.get_function("run")?;
+    let result = run.call(&[Value::I32(1_000_000)])?;
+    assert_eq!(result.to_vec(), vec![Value::I64(7)]);
+    Ok(())
+}
