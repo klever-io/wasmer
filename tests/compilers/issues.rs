@@ -451,6 +451,7 @@ fn singlepass_br_if_spilled_values_stack_leak(mut config: crate::Config) -> Resu
           i64.const 7
           local.set $x
           (loop $l
+            ;; writes below the stack pointer; without it the leak is never hit
             call $touch
             local.get $x
             local.get $x
