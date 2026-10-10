@@ -262,6 +262,9 @@ impl<'a, M: Machine> FuncGen<'a, M> {
     ) -> SmallVec<[Location<M::GPR, M::SIMD>; 1]> {
         let mut ret = smallvec![];
         let mut delta_stack_offset: usize = 0;
+        // One rounded slot per spilled value, so the release functions can give
+        // back the same amount per value however the values are grouped.
+        let slot_size = self.machine.round_stack_adjust(8);
 
         for (ty, mv) in tys {
             let loc = match *ty {
@@ -275,7 +278,7 @@ impl<'a, M: Machine> FuncGen<'a, M> {
                 x
             } else {
                 self.stack_offset.0 += 8;
-                delta_stack_offset += 8;
+                delta_stack_offset += slot_size;
                 self.machine.local_on_stack(self.stack_offset.0 as i32)
             };
             if let Location::GPR(x) = loc {
@@ -291,7 +294,6 @@ impl<'a, M: Machine> FuncGen<'a, M> {
             ret.push(loc);
         }
 
-        let delta_stack_offset = self.machine.round_stack_adjust(delta_stack_offset);
         if delta_stack_offset != 0 {
             self.machine.adjust_stack(delta_stack_offset as u32);
         }
