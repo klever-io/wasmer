@@ -290,7 +290,7 @@ fn rust_panic_import(config: crate::Config) -> Result<()> {
         &imports! {
             "" => {
                 "foo" => func,
-                "bar" => Function::new_native(&store, || panic!("this is another panic"))
+                "bar" => Function::new_native(&store, || -> () { panic!("this is another panic") })
             }
         },
     )?;
@@ -341,7 +341,7 @@ fn rust_panic_start_function(config: crate::Config) -> Result<()> {
     .unwrap_err();
     assert_eq!(err.downcast_ref::<&'static str>(), Some(&"this is a panic"));
 
-    let func = Function::new_native(&store, || panic!("this is another panic"));
+    let func = Function::new_native(&store, || -> () { panic!("this is another panic") });
     let err = panic::catch_unwind(AssertUnwindSafe(|| {
         drop(Instance::new(
             &module,
