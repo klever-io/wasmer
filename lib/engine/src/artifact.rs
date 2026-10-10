@@ -243,7 +243,10 @@ pub struct MetadataHeader {
 impl MetadataHeader {
     /// Current ABI version. Increment this any time breaking changes are made
     /// to the format of the serialized data.
-    const CURRENT_VERSION: u32 = 1;
+    ///
+    /// 2: `VMContext` regions after the signature ids are pointer-aligned, so
+    /// machine code compiled for version 1 uses wrong `VMContext` offsets.
+    const CURRENT_VERSION: u32 = 2;
 
     /// Magic number to identify wasmer metadata.
     const MAGIC: [u8; 8] = *b"WASMER\0\0";

@@ -364,13 +364,17 @@ impl VMOffsets {
     /// The offset of the `tables` array.
     #[allow(clippy::erasing_op)]
     pub fn vmctx_imported_functions_begin(&self) -> u32 {
-        self.vmctx_signature_ids_begin()
+        let offset = self
+            .vmctx_signature_ids_begin()
             .checked_add(
                 self.num_signature_ids
                     .checked_mul(u32::from(self.size_of_vmshared_signature_index()))
                     .unwrap(),
             )
-            .unwrap()
+            .unwrap();
+        // Signature ids are 4 bytes each; every following region holds
+        // pointer-sized fields, so it must start pointer-aligned.
+        align(offset, u32::from(self.pointer_size))
     }
 
     /// The offset of the `tables` array.

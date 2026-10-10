@@ -591,6 +591,33 @@ mod test_vmglobal_definition {
         let offsets = VMOffsets::new(size_of::<*mut u8>() as u8, &module);
         assert_eq!(offsets.vmctx_globals_begin() % 16, 0);
     }
+
+    #[test]
+    fn check_vmctx_regions_pointer_aligned_after_odd_signature_count() {
+        let mut module = ModuleInfo::new();
+        for _ in 0..3 {
+            module
+                .signatures
+                .push(wasmer_types::FunctionType::new(vec![], vec![]));
+        }
+        module.num_imported_functions = 1;
+        module.num_imported_tables = 1;
+        module.num_imported_memories = 1;
+        module.num_imported_globals = 1;
+        let pointer_size = size_of::<*mut u8>() as u32;
+        let offsets = VMOffsets::new(pointer_size as u8, &module);
+        for begin in [
+            offsets.vmctx_imported_functions_begin(),
+            offsets.vmctx_imported_tables_begin(),
+            offsets.vmctx_imported_memories_begin(),
+            offsets.vmctx_imported_globals_begin(),
+            offsets.vmctx_tables_begin(),
+            offsets.vmctx_memories_begin(),
+            offsets.vmctx_builtin_functions_begin(),
+        ] {
+            assert_eq!(begin % pointer_size, 0);
+        }
+    }
 }
 
 impl VMGlobalDefinition {
