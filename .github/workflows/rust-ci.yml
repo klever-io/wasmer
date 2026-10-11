@@ -9,14 +9,18 @@ on:
 
 jobs:
   rust_test:
-    name: Rust tests
-    runs-on: ubuntu-latest
+    name: Rust tests (${{ matrix.os }})
+    strategy:
+      matrix:
+        # arm64 too: some singlepass stack accounting differs on aarch64
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup toolchain
         run: rustup default 1.81
       - name: Run rust tests
-        run: cargo test
+        run: cargo test --features singlepass
   clippy_check:
     permissions: write-all
     name: Clippy linter check
