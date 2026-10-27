@@ -376,7 +376,7 @@ impl VMOffsets {
         align(offset, u32::from(self.pointer_size))
     }
 
-    /// The offset of the `tables` array.
+    /// The offset of the `imported_tables` array.
     #[allow(clippy::identity_op)]
     pub fn vmctx_imported_tables_begin(&self) -> u32 {
         self.vmctx_imported_functions_begin()
@@ -388,7 +388,7 @@ impl VMOffsets {
             .unwrap()
     }
 
-    /// The offset of the `memories` array.
+    /// The offset of the `imported_memories` array.
     pub fn vmctx_imported_memories_begin(&self) -> u32 {
         self.vmctx_imported_tables_begin()
             .checked_add(
@@ -399,7 +399,7 @@ impl VMOffsets {
             .unwrap()
     }
 
-    /// The offset of the `globals` array.
+    /// The offset of the `imported_globals` array.
     pub fn vmctx_imported_globals_begin(&self) -> u32 {
         self.vmctx_imported_memories_begin()
             .checked_add(
