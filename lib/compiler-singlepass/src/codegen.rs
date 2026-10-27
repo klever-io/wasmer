@@ -603,11 +603,9 @@ impl<'a, M: Machine> FuncGen<'a, M> {
         // Stack probe.
         //
         // `rep stosq` writes data from low address to high address and may skip the stack guard page.
-        // so here we probe it explicitly when needed.
-        for i in (sig.params().len()..n)
-            .step_by(NATIVE_PAGE_SIZE / 8)
-            .skip(1)
-        {
+        // so here we probe it explicitly when needed. The first probe is the local right below the
+        // last written slot, and each next one is a page lower, so no gap is larger than a page.
+        for i in (sig.params().len()..n).step_by(NATIVE_PAGE_SIZE / 8) {
             self.machine.zero_location(Size::S64, locations[i]);
         }
 
