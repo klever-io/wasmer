@@ -361,16 +361,19 @@ impl VMOffsets {
         0
     }
 
-    /// The offset of the `tables` array.
-    #[allow(clippy::erasing_op)]
+    /// The offset of the `imported_functions` array.
     pub fn vmctx_imported_functions_begin(&self) -> u32 {
-        self.vmctx_signature_ids_begin()
+        let offset = self
+            .vmctx_signature_ids_begin()
             .checked_add(
                 self.num_signature_ids
                     .checked_mul(u32::from(self.size_of_vmshared_signature_index()))
                     .unwrap(),
             )
-            .unwrap()
+            .unwrap();
+        // Signature ids are 4 bytes each; every following region holds
+        // pointer-sized fields, so it must start pointer-aligned.
+        align(offset, u32::from(self.pointer_size))
     }
 
     /// The offset of the `tables` array.
@@ -703,7 +706,7 @@ impl TargetSharedSignatureIndex {
 
 #[cfg(test)]
 mod tests {
-    use crate::vmoffsets::align;
+    use crate::vmoffsets::{align, VMBuiltinFunctionIndex, VMOffsets};
 
     #[test]
     fn alignment() {
@@ -714,5 +717,54 @@ mod tests {
         assert!(is_aligned(align(32, 16)));
         assert!(is_aligned(align(33, 16)));
         assert!(is_aligned(align(31, 16)));
+    }
+
+    fn offsets_with_one_import_each(pointer_size: u8, num_signature_ids: u32) -> VMOffsets {
+        VMOffsets {
+            pointer_size,
+            num_signature_ids,
+            num_imported_functions: 1,
+            num_imported_tables: 1,
+            num_imported_memories: 1,
+            num_imported_globals: 1,
+            num_local_tables: 0,
+            num_local_memories: 0,
+            num_local_globals: 0,
+        }
+    }
+
+    /// The `VMContext` layout is part of the serialized artifact format
+    /// (`CURRENT_VERSION` in `wasmer-engine`): a change to any offset here
+    /// needs a version bump.
+    #[test]
+    fn vmctx_layout_with_odd_signature_count() {
+        let offsets = offsets_with_one_import_each(8, 3);
+        assert_eq!(offsets.vmctx_signature_ids_begin(), 0);
+        assert_eq!(offsets.vmctx_imported_functions_begin(), 16);
+        assert_eq!(offsets.vmctx_imported_tables_begin(), 32);
+        assert_eq!(offsets.vmctx_imported_memories_begin(), 56);
+        assert_eq!(offsets.vmctx_imported_globals_begin(), 80);
+        assert_eq!(offsets.vmctx_tables_begin(), 96);
+        assert_eq!(offsets.vmctx_memories_begin(), 96);
+        assert_eq!(offsets.vmctx_globals_begin(), 96);
+        assert_eq!(offsets.vmctx_builtin_functions_begin(), 96);
+        assert_eq!(
+            offsets.size_of_vmctx(),
+            96 + VMBuiltinFunctionIndex::builtin_functions_total_number() * 8
+        );
+    }
+
+    #[test]
+    fn vmctx_imported_functions_begin_by_signature_count() {
+        // 8-byte pointers: odd counts round up, even counts keep the old layout.
+        for (num_signature_ids, begin) in [(0, 0), (1, 8), (2, 8), (3, 16), (4, 16)] {
+            let offsets = offsets_with_one_import_each(8, num_signature_ids);
+            assert_eq!(offsets.vmctx_imported_functions_begin(), begin);
+        }
+        // 4-byte pointers: signature ids are already pointer-aligned.
+        for (num_signature_ids, begin) in [(0, 0), (1, 4), (2, 8), (3, 12)] {
+            let offsets = offsets_with_one_import_each(4, num_signature_ids);
+            assert_eq!(offsets.vmctx_imported_functions_begin(), begin);
+        }
     }
 }

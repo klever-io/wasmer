@@ -243,7 +243,10 @@ pub struct MetadataHeader {
 impl MetadataHeader {
     /// Current ABI version. Increment this any time breaking changes are made
     /// to the format of the serialized data.
-    const CURRENT_VERSION: u32 = 1;
+    ///
+    /// 2: `VMContext` regions after the signature ids are pointer-aligned, so
+    /// machine code compiled for version 1 uses wrong `VMContext` offsets.
+    const CURRENT_VERSION: u32 = 2;
 
     /// Magic number to identify wasmer metadata.
     const MAGIC: [u8; 8] = *b"WASMER\0\0";
@@ -291,5 +294,31 @@ impl MetadataHeader {
             ));
         }
         Ok(header.len as usize)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[repr(C, align(16))]
+    struct AlignedHeader([u8; MetadataHeader::LEN]);
+
+    #[test]
+    fn metadata_header_accepts_current_version() {
+        let header = AlignedHeader(MetadataHeader::new(42));
+        assert_eq!(MetadataHeader::parse(&header.0).unwrap(), 42);
+    }
+
+    #[test]
+    fn metadata_header_rejects_version_1_artifacts() {
+        // Version 1 artifacts were compiled against the old `VMContext`
+        // layout and must be recompiled, never run.
+        let mut header = AlignedHeader(MetadataHeader::new(42));
+        header.0[8..12].copy_from_slice(&1u32.to_ne_bytes());
+        assert!(matches!(
+            MetadataHeader::parse(&header.0),
+            Err(DeserializeError::Incompatible(_))
+        ));
     }
 }
