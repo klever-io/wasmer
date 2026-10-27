@@ -1303,6 +1303,15 @@ pub unsafe fn safe_ptr_copy<T>(
         return Ok(());
     }
 
+    // Every `VMContext` region is pointer-aligned (see `VMOffsets`), so
+    // `initialize_vmctx` never gets here: fail loudly on a layout regression.
+    debug_assert!(
+        is_aligned(src) && is_aligned(dst),
+        "safe_ptr_copy: misaligned pointer (src {:p}, dst {:p})",
+        src,
+        dst
+    );
+
     // For unaligned pointers, perform a byte-wise copy
     let src_bytes = src as *const u8;
     let dst_bytes = dst as *mut u8;
