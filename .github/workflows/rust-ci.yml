@@ -21,6 +21,8 @@ jobs:
         run: rustup default 1.99.0
       - name: Run rust tests
         run: cargo test --features singlepass
+      - name: Run VM and engine unit tests
+        run: cargo test -p wasmer-vm -p wasmer-engine
   clippy_check:
     permissions: write-all
     name: Clippy linter check
